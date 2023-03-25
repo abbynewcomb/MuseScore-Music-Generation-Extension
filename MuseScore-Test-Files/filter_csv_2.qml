@@ -55,7 +55,7 @@ MuseScore {
                         var startTickPos = element.parent.position.ticks; //get position of first note within the bar
                         isFirstNote++;
                     }
-                noteLengthArr.push({'tick': tick, 'endOfBar': element.position.denominator});
+                noteLengthArr.push({'tick': tick, 'duration': element.parent.duration.ticks}); //THIS IS GOOD
             }
         }
         noteLengthArr.sort(function(a, b) { //sorts array based on tick value just in case the last element is not in order
@@ -66,9 +66,9 @@ MuseScore {
         }
         var lastNote = noteLengthArr[noteLengthArr.length - 1];
         console.log("ORIGINAL END TICK: " + endTick);
-        console.log("NEW END TICK: " + (lastNote['endOfBar'] - lastNote['tick']));
-        console.log("END OF BAR: " + lastNote['endOfBar'] );
-        //endTick += (lastNote['endOfBar'] - lastNote['tick']);
+        console.log("NEW END TICK: " + (lastNote['duration'] + lastNote['tick']));
+        console.log("DURATION: " + lastNote['duration'] );
+        endTick = (lastNote['duration'] + lastNote['tick']);
 
         console.log("Start tick: " + startTick + ", End tick: " + endTick);
 
@@ -82,14 +82,15 @@ MuseScore {
         var strArray = inputTxt.split(/\r?\n/);
         console.log("strArray[1]:" + strArray[1]);
         console.log(strArray.length);
-
+        
+        var lastLoop = 0;
         for (var i = 0; i < strArray.length; i++) {
             var lineArr = strArray[i].split(",");
             var tickVal = parseInt(lineArr[1]);
             var tempStr = "";
-
+            var prevLine = [];
             if(lineArr[2]) { //if it exists
-                 var isNote = (lineArr[2].trim() == "Note_on_c");
+                var isNote = (lineArr[2].trim() == "Note_on_c");
                 if ((tickVal >= startTick && tickVal <= endTick) || (tickVal == 0 && !isNote)) {
                     var tickCorrectedArray = [];
                     //console.log("lineArr[1]:" + lineArr[1])
@@ -99,12 +100,13 @@ MuseScore {
                                 console.log("lineArr[1] ORIGINAL: " + lineArr[1] + ", lineArr[1] CORRECTED: " + (lineArr[1] - startTick + startTickPos));
                                tickCorrectedArray.push((lineArr[1] - startTick + startTickPos));
                             } else {
-                                tickCorrectedArray .push(lineArr[k]);
+                                tickCorrectedArray.push(lineArr[k]);
                                 console.log("lineArr[ " + k + "]:" + lineArr[k]);
                             }
                         }
                         filteredTxt += tickCorrectedArray.join();
                         filteredTxt += '\n';
+                        lastLoop = i; //gets the most recent i value
                     } else {
                         filteredTxt += strArray[i];
                         filteredTxt += '\n';
@@ -114,9 +116,24 @@ MuseScore {
                 } 
             
                 if ((lineArr[2].trim() == "End_track")) {
-                    console.log("Success!");
+                    console.log("****Success!******");
+                    console.log("last loop = " + lastLoop);
+                    if(lastLoop > 0) {
+                        prevLine = strArray[lastLoop+1].split(",");
+                        var prevVelocity = parseInt(prevLine[5]);
+                        //filteredTxt += (prevLine[1] - startTick + startTickPos);
+                        //filteredTxt += "prev velocity: "
+                        //filteredTxt += prevVelocity;
+                        if(prevVelocity == 0) {
+                            //filteredTxt += "does equal 80!";
+                            prevLine[1] = prevLine[1] - startTick + startTickPos;
+                            filteredTxt += prevLine.join();
+                            filteredTxt += '\n';
+                        }
+                    }
 
-                    tempStr = lineArr[0] + ", " + (prevTick + 1 - startTick + startTickPos) + ", End_track\n";
+                    //tempStr = lineArr[0] + ", " + (prevTick + 1 - startTick + startTickPos) + ", End_track\n";
+                    tempStr = lineArr[0] + ", " + (prevLine[1] + 1) + ", End_track\n";
                     filteredTxt += tempStr;
                 }
             }
