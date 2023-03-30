@@ -8,11 +8,10 @@ MuseScore {
     version: "1.0"
 
     FileIO {
-        id: readTest
+        id: writeTest
         source: filePath
-        onError: console.log(msg + "\nFilename = " + readTest.source);
+        onError: console.log(msg + "\nFilename = " + writeTest.source);
     }
-    
     onRun: {
         var cursor = curScore.newCursor(); //create new cursor
 
@@ -68,43 +67,63 @@ MuseScore {
         var newTrackValue;
         var previousTick;
         
-        outputText = outputText + "\n0, 0, Header, 1, " + totalTracks + ", 480\n"; //print file header info
-        outputText = outputText + "1, 0, Start_track\n" //print start track for first track
+        //PRINT PRE-TRACK DATA
+        outputText = outputText + "0, 0, Header, 1, " + totalTracks + ", 480\n";
+        outputText = outputText + "1, 0, Start_track\n"
+        outputText = outputText + "1, 0, Title_t, \"Piano\\000\"\n";
+        outputText = outputText + "1, 0, Time_signature, 4, 2, 24, 8\n"
+        outputText = outputText + "1, 0, Key_signature, 0, \"major\"\n";
+        outputText = outputText + "1, 0, Tempo, 500000\n";
+        outputText = outputText + "1, 0, Control_c, 0, 121, 0\n1, 0, Program_c, 0, 0\n1, 0, Control_c, 0, 7, 100\n1, 0, Control_c, 0, 10, 64\n1, 0, Control_c, 0, 91, 0\n1, 0, Control_c, 0, 93, 0\n1, 0, MIDI_port, 0\n";
+        
+        var noteStringArray = [];
         for(var i = 0; i < noteArray.length; i++) {
             newTrackValue = noteArray[i].trackID;
             if(newTrackValue != oldTrackValue) { //checks if there is a new track
-                for(var j = oldTrackValue; j < newTrackValue; j++){ //cycle through empty tracks to maintain track info
-                    outputText = outputText + j + ", " + (previousTick + 1) + ", End track\n";
+                for(var j = oldTrackValue; j < newTrackValue; j++){
+                    //sorts array by tick and velocity
+                    noteStringArray.sort(function (a, b) {
+                        return a.tick - b.tick || a.velocity - b.velocity;
+                    });
+
+                    console.log("NOTE STRING LENGTH: " + noteStringArray.length);
+                    //adds the note_on_c strings to array
+                    for(var k = 0; k < noteStringArray.length; k++) {
+                        outputText = outputText + noteStringArray[k].outputString;
+                    }
+                    noteStringArray = [];
+                    
+                    outputText = outputText + j + ", " + (previousTick + 1) + ", End_track\n";
                     outputText = outputText + (j+1) + ", 0, Start_track\n"
                 }
             }
             previousTick = (noteArray[i].tick + noteArray[i].duration)
-            outputText = outputText + noteArray[i].trackID + ", " + noteArray[i].tick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 80\n";
-            outputText = outputText + noteArray[i].trackID + ", " + previousTick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 0\n";
+            
+            //Pushes Track Info to Array
+            noteStringArray.push({'tick': noteArray[i].tick, 'velocity': 80, 'outputString': (noteArray[i].trackID + ", " + noteArray[i].tick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 80\n")});
+            noteStringArray.push({'tick': previousTick, 'velocity': 0, 'outputString': (noteArray[i].trackID + ", " + previousTick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 0\n")});
 
             oldTrackValue = noteArray[i].trackID;
         }
-        outputText = outputText + oldTrackValue + ", " + (previousTick+1) + ", End track\n";  
+        noteStringArray.sort(function (a, b) {
+            return a.tick - b.tick || a.velocity - b.velocity;
+        });
+
+        console.log("NOTE STRING LENGTH: " + noteStringArray.length);
+        for(var k = 0; k < noteStringArray.length; k++) {
+            outputText = outputText + noteStringArray[k].outputString;
+        }
+        
+        outputText = outputText + oldTrackValue + ", " + (previousTick+1) + ", End_track\n";  
+        outputText += "0, 0, End_of_file\n";
 
         console.log(outputText);
-        cursor.rewind(Cursor.SELECTION_START); //put cursor at beginning of selection
-/*
-        var ele = cursor.segment.elementAt(4).notes[0];
-        //console.log("SELECTION SIZE: " + ele.length); 
-        var getKeys = function(obj){
-        var keys = [];
-        var i = 0;
-        for(var key in obj){
-            keys.push(key);
-            console.log(i + ": " + key + ": " + obj[key]);
-            i++;
-            
-        }
-        return keys;
-        }
-        //getKeys(ele);
-        */
-        
+
+        var filePath = "/Users/adam/Documents/Capstone MuseScore Plugin/midicsv/Export_test_5.txt"
+        writeTest.source = filePath;
+        console.log("Writing to: " + filePath);
+        writeTest.write(outputText);  
+       
 
         Qt.quit();
     }
