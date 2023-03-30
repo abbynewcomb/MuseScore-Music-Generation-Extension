@@ -1,0 +1,195 @@
+import QtQuick 2.0
+import MuseScore 3.0
+import FileIO 3.0
+
+MuseScore {
+    menuPath: "Plugins.pluginName"
+    description: "Takes input from midicsv and outputs it to the score."
+    version: "1.1"
+
+    FileIO {
+        id: readTest
+        source: filePath
+        onError: console.log(msg + "\nFilename = " + readTest.source);
+    }
+    FileIO {
+        id: writeTest
+        source: filePath2
+        onError: console.log(msg + "\nFilename = " + writeTest.source);
+    }
+    
+    onRun: {
+/******************************************/
+/*********START READING FROM SCORE*********/
+/******************************************/
+
+        var cursor = curScore.newCursor(); //create new cursor
+
+        cursor.rewind(Cursor.SELECTION_START); //put cursor at beginning of selection
+        var startStaff  = cursor.staffIdx;
+        var startTick = cursor.tick;
+        console.log("START CURSOR STAFF: " + startStaff);
+        console.log("START CURSOR TICKS: " + startTick);
+
+        var positionInMeasure = cursor.segment.elementAt(startStaff*4).position.ticks;
+        console.log("START POSITION: " + positionInMeasure);
+
+
+        cursor.rewind(Cursor.SELECTION_END); //put cursor at end of selection
+        var endStaff  = cursor.staffIdx;
+        var endTick = cursor.tick;
+        console.log("END CURSOR STAFF: " + endStaff);
+        console.log("END CURSOR TICKS: " + endTick);
+
+        var totalTracks = endStaff - startStaff + 1; //get total number of tracks
+        console.log("TOTAL TRACKS: " + totalTracks);
+
+        var noteArray = [];
+        for(var i = 0; i < totalTracks; i++) { //iterate through all tracks
+            cursor.rewind(Cursor.SELECTION_START); //put cursor back at beginning of selection
+            var currentTrack = (startStaff*4);
+            startStaff++;
+  
+            while(cursor.tick < endTick) { 
+                console.log("CURRENT TRACK: " + currentTrack);
+                var currentElement = cursor.segment.elementAt(currentTrack); //4 channels per track starting at 0, 3, 7, 11,...
+                if(currentElement) {
+                //console.log("ELEMENT EXISTS!");
+                    if(currentElement.name == "Chord") { //if not a rest or a ChordRest
+                        var noteDuration = currentElement.duration.ticks;
+                        var notesInChord = currentElement.notes;
+                        
+                        for(var j = 0; j < notesInChord.length; j++) { //for each note in the chord, get the trackID, tick, duration, and pitch
+                            noteArray.push({'trackID': i + 1, 'tick': (cursor.tick - startTick + positionInMeasure), 'duration': noteDuration, 'pitch': notesInChord[j].pitch});
+                        }
+                    }
+                }
+                cursor.next();
+            }
+        }
+
+        for(var k = 0; k < noteArray.length; k++) {
+            console.log("trackID: " + noteArray[k].trackID + ", tick: " + noteArray[k].tick + ", duration: " + noteArray[k].duration + ", pitch: " + noteArray[k].pitch)
+        }
+
+        var outputText = ""; //text for output
+        var oldTrackValue = noteArray[0].trackID;
+        var newTrackValue;
+        var previousTick;
+        
+        outputText = outputText + "\n0, 0, Header, 1, " + totalTracks + ", 480\n";
+        outputText = outputText + "1, 0, Start_track\n"
+        for(var i = 0; i < noteArray.length; i++) {
+            newTrackValue = noteArray[i].trackID;
+            if(newTrackValue != oldTrackValue) { //checks if there is a new track
+                for(var j = oldTrackValue; j < newTrackValue; j++){
+                    outputText = outputText + j + ", " + (previousTick + 1) + ", End track\n";
+                    outputText = outputText + (j+1) + ", 0, Start_track\n"
+                }
+            }
+            previousTick = (noteArray[i].tick + noteArray[i].duration -1);
+            outputText = outputText + noteArray[i].trackID + ", " + noteArray[i].tick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 80\n";
+            outputText = outputText + noteArray[i].trackID + ", " + previousTick + ", " + "Note_on_c, 0, " + noteArray[i].pitch + ", 0\n";
+
+            oldTrackValue = noteArray[i].trackID;
+        }
+        outputText = outputText + oldTrackValue + ", " + (previousTick+1) + ", End track\n";  
+
+        console.log(outputText);
+
+        var filePath = "/Users/adam/Documents/Capstone MuseScore Plugin/Plugin IO Test Files/Export_test_4.txt"
+        writeTest.source = filePath;
+        console.log("Writing to: " + filePath);
+        writeTest.write(outputText);  
+
+/******************************************/
+/**********START WRITING TO SCORE**********/
+/******************************************/
+
+        cursor.rewind(Cursor.SELECTION_END); //put cursor at end of selection
+        var startWriteTick = cursor.tick;
+        console.log("START WRITING TICK: " + startWriteTick);
+
+        var cursorWrite = curScore.newCursor();
+
+        /*****GET TEXT FROM FILE*****/
+        var filteredTxt = "";
+        var inputTxt = "";
+        var filePath2 = "/Users/adam/Documents/Capstone MuseScore Plugin/Plugin IO Test Files/Export_test_4.txt";
+        readTest.source = filePath2;
+        console.log("Reading from: " + filePath2);
+        inputTxt = readTest.read();
+
+        var strArray = inputTxt.split(/\r?\n/); //splits file into lines
+
+        var prevTickVal = -1; //sets up chord detector
+
+        /*****MAIN LOOP*****/
+        for (var i = 0; i < strArray.length; i++) {
+            var lineArr = strArray[i].split(","); //split the input array
+            if(lineArr[2]){
+                var type = lineArr[2].trim() //get line type
+                var velocity = parseInt(lineArr[5]);
+
+                var isNote = (type == "Note_on_c");
+                /*****ONLY IF START OF NOTE*****/
+                if (isNote && (velocity != 0)) {
+                    var track = parseInt(lineArr[0]); //get trackID
+                    var tickVal = parseInt(lineArr[1]); //get tickVal
+                    var pitch = parseInt(lineArr[4]);
+
+                    var currentCount = i;
+                    var newCount = i + 1;
+                    var newPitch = -1;
+                    /*****FIND NOTE DURATION*****/
+                    while((pitch != newPitch)) { //look for note_off
+                        var newLineArr = strArray[newCount].split(","); //split the input array
+                        var newPitch = parseInt(newLineArr[4]);
+                        newCount++;
+                    }
+                    var endTickVal = parseInt(newLineArr[1]);
+                    var noteDuration = roundNote(endTickVal - tickVal); //get rounded note duration
+                    var durationFrac = getNoteDuration(noteDuration);
+
+                    /*****ADJUSTING WRITE CURSOR ATTRIBUTES AND POSITIONING*****/
+                    var adjustedTick = startWriteTick+tickVal;
+                    cursorWrite.rewindToTick(adjustedTick);
+                    cursorWrite.staffIdx = track - 1;
+                    cursorWrite.setDuration(durationFrac[0], durationFrac[1]); //set the duration of the note
+
+                    /*****CHECKING FOR CHORD*****/
+                    if(tickVal != prevTickVal) {
+                        cursorWrite.addNote(pitch, false); //adds as individual note
+                    }
+                    else {
+                        cursorWrite.addNote(pitch, true); //adds to chord
+                        
+                    }
+                    prevTickVal = tickVal; //update chord checker value
+                    console.log("staffIdx: " + track + ", tick:" + tickVal + ", pitch: " + pitch + ", duration: " + durationFrac[0] + "/" + durationFrac[1]); 
+                }
+            }
+        } 
+     
+        
+        Qt.quit()
+    }
+        /*****given tick, returns numerical fraction of a beat*****/
+        //(given 480, returns 1/4 aka quarter note) 
+        function getNoteDuration(tick) { 
+            var numerator = tick/60; //get total # of 32nd notes 
+            var denominator = 32; //change to 64 in conjunction with roundNote to support 64th notes
+
+            while (numerator % 2 === 0) {
+                numerator /= 2;
+                denominator /= 2;
+            }
+
+            return [numerator, denominator];
+        }
+
+        function roundNote(num) { //supports up to a 32nd note
+            return Math.ceil(num/60) * 60; //change both to 30 to support 64th note
+        }
+
+      }
