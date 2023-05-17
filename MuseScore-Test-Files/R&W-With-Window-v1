@@ -7,8 +7,9 @@ import Qt.labs.settings 1.0
 import QtQuick.Dialogs 1.1
 import FileIO 3.0
 import MuseScore 3.0
+
 MuseScore {
-    menuPath: "Plugins.Simple Window"
+    menuPath: "Plugins.MuseScore Plugin"
     version: "1.0"
     description: "A simple plugin that displays a window with buttons"
     pluginType: "dialog"
@@ -23,11 +24,11 @@ MuseScore {
         onError: console.log(msg + "\nFilename = " + writeTest.source);
     }
     onRun: {
-    
-        /******************************************/
-        /*********START READING FROM SCORE*********/
-        /******************************************/
-    
+
+/******************************************/
+/*********START READING FROM SCORE*********/
+/******************************************/
+
         var cursor = curScore.newCursor(); //create new cursor
         cursor.rewind(Cursor.SELECTION_START); //put cursor at beginning of selection
         var startStaff = cursor.staffIdx;
@@ -130,11 +131,11 @@ MuseScore {
         writeTest.source = filePath;
         console.log("Writing to: " + filePath);
         writeTest.write(outputText);
-        
-        /******************************************/
-        /**********START WRITING TO SCORE**********/
-        /******************************************/
-        
+
+/******************************************/
+/**********START WRITING TO SCORE**********/
+/******************************************/
+
         cursor.rewind(Cursor.SELECTION_END); //put cursor at end of selection
         var startWriteTick = cursor.tick;
         console.log("START WRITING TICK: " + startWriteTick);
@@ -142,7 +143,6 @@ MuseScore {
         /*****GET TEXT FROM FILE*****/
         var filteredTxt = "";
         var inputTxt = "";
-        
         /*CHANGE FILE NAME HERE FOR DEMO*/
         var filePath2 = "/Users/adam/Documents/Capstone MuseScore Plugin/midicsv/Export_test_5.txt"
         //var filePath2 = "/Users/adam/Documents/Capstone MuseScore Plugin/midicsv/TME2.txt";
@@ -151,7 +151,6 @@ MuseScore {
         inputTxt = readTest.read();
         var strArray = inputTxt.split(/\r?\n/); //splits file into lines
         var prevTickVal = -1; //sets up chord detector
-        
         /*****MAIN LOOP*****/
         for (var i = 0; i < strArray.length; i++) {
             var lineArr = strArray[i].split(","); //split the input array
@@ -208,96 +207,110 @@ MuseScore {
     function roundNote(num) { //supports up to a 32nd note
         return Math.ceil(num / 60) * 60; //change both to 30 to support 64th note
     }
-      /******************************************/
-      /*******CREATING INTERACTIVE WINDOW********/
-      /******************************************/
 
-    width: 300
-    height: 300
+/******************************************/
+/******CREATING THE INTERACTIVE WINDOW*****/
+/******************************************/
+
+Window {
+    id: main
+    visible: true
+    width: 400
+    height: 250
+    property real scaleFactor: 1.0
+    onScaleFactorChanged: {
+        main.width = 400 * scaleFactor;
+        main.height = 250 * scaleFactor;
+    }
+
     Rectangle {
-        id: main
-        width: 300
-        height: 300
+        anchors.fill: parent
         color: "lightgrey"
+
         Text {
             id: titleText
             text: "AI Music Generator"
             anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: 16
+            font.pixelSize: 16 * main.scaleFactor
             font.bold: true
-            y: 20
+            y: 20 * main.scaleFactor
         }
         Button {
             id: button1
-            x: 50
-            y: 60
-            text: "Button 1"
+            width: 100 * main.scaleFactor
+            height: 40 * main.scaleFactor
+            font.pixelSize: 16 * main.scaleFactor
+            x: 50 * main.scaleFactor
+            y: measureCounter.y + measureCounter.height + 10 * main.scaleFactor
+            text: "Generate"
             onClicked: {
-                console.log("Button 1 clicked")
-            }
-        }
-        Button {
-            id: button2
-            x: 50
-            y: 100
-            text: "Button 2"
-            onClicked: {
-                console.log("Button 2 clicked")
+                console.log("Generate button clicked")
             }
         }
         Button {
             id: button3
-            x: 50
-            y: 140
+            width: 100 * main.scaleFactor
+            height: 40 * main.scaleFactor
+            font.pixelSize: 16 * main.scaleFactor
+            x: measureCounter.x + measureCounter.width - width
+            y: measureCounter.y + measureCounter.height + 10 * main.scaleFactor
             text: "Quit"
             onClicked: {
-                console.log("Button 3 clicked")
+                console.log("Quit button clicked")
+                main.close();
                 Qt.quit();
             }
         }
         Text {
-            id: sliderTitle
+            id: counterTitle
             text: "Measures to Generate"
-            x: 50
-            y: 180
-            font.pixelSize: 14
+            x: 50 * main.scaleFactor
+            y: 100 * main.scaleFactor
+            font.pixelSize: 14 * main.scaleFactor
         }
-        Slider {
-            id: measureSlider
-            x: 50
-            y: 200
-            width: 200
+        SpinBox {
+            id: measureCounter
+            x: 50 * main.scaleFactor
+            y: 120 * main.scaleFactor
+            width: 300 * main.scaleFactor
+            height: 30 * main.scaleFactor
+            font.pixelSize: 14 * main.scaleFactor
             from: 1
             to: 10
-            stepSize: 1
             value: 5 // default value
             onValueChanged: {
-                console.log("Slider value: " + measureSlider.value)
+                console.log("Counter value: " + measureCounter.value)
             }
         }
-        
-         Text {
-            id: sliderMin
-            text: measureSlider.from
-            x: 50
-            y: 230
-            font.pixelSize: 14
+        Button {
+            id: increaseScaleButton
+            width: 30 * main.scaleFactor
+            height: width
+            font.pixelSize: 14 * main.scaleFactor
+            x: 10 * main.scaleFactor
+            y: 10 * main.scaleFactor
+            text: "+"
+            onClicked: {
+                main.scaleFactor += 0.1;
+                console.log("Scale factor increased to: " + main.scaleFactor);
+            }
         }
-
-        Text {
-            id: sliderMax
-            text: measureSlider.to
-            x: 230
-            y: 230
-            font.pixelSize: 14
-            horizontalAlignment: Text.AlignRight
-        }
-        Text {
-            id: sliderValue
-            text: "Current value: " + measureSlider.value
-            x: 50
-            y: 250
-            font.pixelSize: 14
+        Button {
+            id: decreaseScaleButton
+            width: increaseScaleButton.width
+            height: width
+            font.pixelSize: 14 * main.scaleFactor
+            x: increaseScaleButton.x + increaseScaleButton.width + 10 * main.scaleFactor
+            y: 10 * main.scaleFactor
+            text: "-"
+            onClicked: {
+                if (main.scaleFactor > 0.1) {
+                    main.scaleFactor -= 0.1;
+                    console.log("Scale factor decreased to: " + main.scaleFactor);
+                }
+            }
         }
     }
+}
+
 }
