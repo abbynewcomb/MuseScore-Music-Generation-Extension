@@ -190,6 +190,8 @@ MuseScore {
                     inputTxt = readTest.read();
                     var strArray = inputTxt.split(/\r?\n/); //splits file into lines
                     var prevTickVal = -1; //sets up chord detector
+                    var prevEndTickVal = 0; 
+                    var prevEndTickVal = {};
                     /*****MAIN LOOP*****/
                     for (var i = 0; i < strArray.length; i++) {
                         var lineArr = strArray[i].split(","); //split the input array
@@ -205,6 +207,11 @@ MuseScore {
                                 var currentCount = i;
                                 var newCount = i + 1;
                                 var newPitch = -1;
+
+                                if (!prevEndTickVal.hasOwnProperty(track)) {
+                                    prevEndTickVal[track] = 0;
+                                }
+
                                 /*****FIND NOTE DURATION*****/
                                 while ((pitch != newPitch)) { //look for note_off
                                     var newLineArr = strArray[newCount].split(","); //split the input array
@@ -216,6 +223,15 @@ MuseScore {
                                 var durationFrac = getNoteDuration(noteDuration);
                                 /*****ADJUSTING WRITE CURSOR ATTRIBUTES AND POSITIONING*****/
                                 var adjustedTick = startWriteTick + tickVal;
+                                if (tickVal > prevEndTickVal[track]) {
+                                    var restTicks = tickVal - prevEndTickVal[track]; // calculate length of rest in ticks
+                                    var restDuration = roundNote(restTicks); // get rounded rest duration
+                                    var restFrac = getNoteDuration(restDuration); // convert rest duration to suitable format
+                                    cursorWrite.staffIdx = track - 1 + startStaff;
+                                    cursorWrite.setDuration(restFrac[0], restFrac[1]); // set the duration of the rest
+                                    moveCursorToTick(cursorWrite, startWriteTick + prevEndTickVal[track]); // move cursor to adjustedTick
+                                    cursorWrite.addRest(); // add rest
+                                }
                                 cursorWrite.rewindToTick(adjustedTick);
                                 //console.log("ADJUSTED TICK: " + adjustedTick);
                                 cursorWrite.staffIdx = track - 1 + startStaff;
@@ -227,6 +243,7 @@ MuseScore {
                                     cursorWrite.addNote(pitch, true); //adds to chord
                                 }
                                 prevTickVal = tickVal; //update chord checker value
+                                prevEndTickVal[track] = endTickVal; // update end of last note for the specific track
                                 console.log("staffIdx: " + track + ", tick:" + tickVal + ", pitch: " + pitch + ", duration: " + durationFrac[0] + "/" + durationFrac[1]);
                             }
                         }
@@ -321,5 +338,11 @@ MuseScore {
     function roundNote(num) { //supports up to a 32nd note
         return Math.ceil(num / 60) * 60; //change both to 30 to support 64th note
     }
+    function moveCursorToTick(cursor, tick) {
+        cursor.rewind(0); // Go to start of score
+        while (cursor.tick < tick) {
+            cursor.next(); // Move cursor one element to the right
+        }
+}
 
 }
