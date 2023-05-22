@@ -112,6 +112,28 @@ class g():
             temp_num = int(str1)
 
             return m_num, t_num, temp_num
+
+    def io_one_generation(self, in_csv_filename, out_csv_filename):
+        # this function completes the process of reading in the in_csv_filename, generating a sequence and writing to the out filename
+        
+        # generate a new melody and write to out file
+        in_seq, num_measures, tempo, temperature = gen.csv_to_seq_proto(in_csv_filename)
+        # still not sure how to use num_measures to calc num_steps TO DO add support for this
+        out_seq = gen.generate(in_seq, tempo, num_steps=128, temperature=temperature)
+        gen.seq_proto_to_csv(out_seq, out_csv_filename)
+
+    def io_4_generations(self, in_csv_filename, out_csv_filename):
+        # this function completes the process of reading in the in_csv_filename, generating 4 sequences and writing to the out filename with 0,1,2,3 appended at end
+        start_str = ""
+        ext_str = ""
+        for i in range(len(out_csv_filename)):
+            if out_csv_filename[i] = '.'
+            start_str = out_csv_filename[:i]
+            ext_str = out_csv_filename[i:]
+
+        for i in range(4):
+            out_csv_filename = start_str + str(i) + ext_str
+            self.io_one_generation(self, in_csv_filename, out_csv_filename)
     
 
 
@@ -149,10 +171,7 @@ def main():
             changed = m.changedQ()
         
         # generate a new melody and write to out file
-        in_seq, num_measures, tempo, temperature = gen.csv_to_seq_proto(in_csv_filename)
-        # still not sure how to use num_measures to calc num_steps TO DO add support for this
-        out_seq = gen.generate(in_seq, tempo, num_steps=128, temperature=temperature)
-        gen.seq_proto_to_csv(out_seq, out_csv_filename)
+        gen.io_one_generation(in_csv_filename, out_csv_filename)
     
 
 if __name__ == "__main__":
