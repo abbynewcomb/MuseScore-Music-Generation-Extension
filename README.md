@@ -10,7 +10,7 @@
 ## Setting up the Model
 1. Open Terminal and install our GitHub library using this command: `git clone https://github.com/abbynewcomb/MuseScore-Music-Generation-Extension.git` and navigate to its main directory. 
 2. Download the MelodyRNN model from [here](http://download.magenta.tensorflow.org/models/basic_rnn.mag) into this directory. 
-3. Run the `source activate magenta` command to activate the magenta environment
+3. Run the `source activate magenta` command to activate the magenta environment.
 
 ## Using the Model
 1. Run the terminal command `python generator.py` in the main directory of our GitHub. This will initialize the model. 
