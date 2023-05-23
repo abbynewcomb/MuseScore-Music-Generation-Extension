@@ -31,12 +31,14 @@ class g():
 
         print('🎉 Done initializing model!')
 
-    def generate(self, input_sequence, tempo, num_steps=128, temperature=1): # requires input sequence in seq_proto format
+    def generate(self, input_sequence, tempo, num_measures, temperature=1): # requires input sequence in seq_proto format
         # Set the start time to begin on the next step after the last note ends.
         last_end_time = (max(n.end_time for n in input_sequence.notes)
                         if input_sequence.notes else 0)
         qpm = tempo 
-        seconds_per_step = 60.0 / qpm / self.melody_rnn.steps_per_quarter
+        seconds_per_step = 60.0 / qpm / self.melody_rnn.steps_per_quarter 
+        #Calculate number of steps based on num_measures
+        num_steps = (num_measures + 4)/(seconds_per_step / 2)
         total_seconds = num_steps * seconds_per_step
 
         generator_options = generator_pb2.GeneratorOptions()
@@ -124,10 +126,10 @@ class g():
         # this function completes the process of reading in the in_csv_filename, generating a sequence and writing to the out filename
         
         # generate a new melody and write to out file
-        in_seq, num_measures, tempo, temperature = gen.csv_to_seq_proto(self.in_fname)
+        in_seq, num_measures, tempo, temperature = self.csv_to_seq_proto(self.in_fname)
         # still not sure how to use num_measures to calc num_steps TO DO add support for this
-        out_seq = gen.generate(in_seq, tempo, num_steps=128, temperature=temperature)
-        gen.seq_proto_to_csv(out_seq, self.out_fname)
+        out_seq = self.generate(in_seq, tempo, num_measures, temperature=temperature)
+        self.seq_proto_to_csv(out_seq, self.out_fname)
 
     def io_4_generations(self):
         # this function completes the process of reading in the in_csv_filename, generating 4 sequences and writing to the out filename with 0,1,2,3 appended at end
@@ -166,8 +168,13 @@ class monitor(object):
 
 def main(): 
     #filename = sys.argv[1]
-    in_csv_filename = "/tmp/musescore_generator/in.csv"
-    out_csv_filename = "/tmp/musescore_generator/in.csv"
+    # in_csv_filename = "/tmp/musescore_generator/in.csv"
+    # out_csv_filename = "/tmp/musescore_generator/out.csv"
+
+    #local testing
+    in_csv_filename = "in.csv"
+    out_csv_filename = "out.csv"
+
     m = monitor(in_csv_filename) 
     gen = g(in_csv_filename, out_csv_filename)
 
