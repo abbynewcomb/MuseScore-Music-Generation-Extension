@@ -24,7 +24,7 @@
 2. Navigate to Plugins>Plugin Manager at the top of your screen.
 3. Check off `AI Music Generator` in the window on the left, and press OK.
 
-![Plugin Window](Plugin.png)
+![Plugin Window](PluginWindow.png)
 
 ### Running the Plugin
 1. Follow the directions in this document under Model→Using the Model.
