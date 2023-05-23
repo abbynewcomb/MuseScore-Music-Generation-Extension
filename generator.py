@@ -31,14 +31,15 @@ class g():
 
         print('🎉 Done initializing model!')
 
-    def generate(self, input_sequence, tempo, num_measures, temperature=1): # requires input sequence in seq_proto format
+    def generate(self, input_sequence, tempo, num_measures, input, temperature=1): # requires input sequence in seq_proto format
         # Set the start time to begin on the next step after the last note ends.
         last_end_time = (max(n.end_time for n in input_sequence.notes)
                         if input_sequence.notes else 0)
         qpm = tempo 
+        input_measures = input
         seconds_per_step = 60.0 / qpm / self.melody_rnn.steps_per_quarter 
         #Calculate number of steps based on num_measures
-        num_steps = (num_measures + 4)/(seconds_per_step / 2)
+        num_steps = (num_measures + input_measures)/(seconds_per_step / 2)
         total_seconds = num_steps * seconds_per_step
 
         generator_options = generator_pb2.GeneratorOptions()
@@ -79,7 +80,7 @@ class g():
         str1 = ""
         with open(in_csv_filename, "r") as f:
             str1 = f.readline()
-        measures, tempo, temperature = self.parse_comment(str1)
+        measures, tempo, temperature, input = self.parse_comment(str1)
 
         midi_object = pm.csv_to_midi(in_csv_filename) 
         with open("output.mid", "wb") as output_file:
@@ -88,10 +89,10 @@ class g():
 
         ns = note_seq.midi_file_to_sequence_proto("output.mid")
         
-        return ns, measures, tempo, temperature
+        return ns, measures, tempo, temperature, input
     
     def parse_comment(self, str1):
-        # parses comment of form exactly: '#measures tempo temperature'
+        # parses comment of form exactly: '#measures tempo temperature input measures'
             # remove hashtag
             str1 = str1[1:]
 
@@ -117,18 +118,29 @@ class g():
                     break
             t_num = int(t_str)
 
-            # rest is temperature
-            temp_num = int(str1)
+            # rest is temperature info
+            temp_str = ""
+            for c in str1:
+                if not c == ' ':
+                    temp_str += c
+                    str1 = str1[1:]
+                else: # found a space
+                    str1 = str1[1:] 
+                    break
+            temp_num = int(temp_str)
 
-            return m_num, t_num, temp_num
+            # rest is temperature
+            input = int(str1)
+
+            return m_num, t_num, temp_num, input
 
     def io_one_generation(self):
         # this function completes the process of reading in the in_csv_filename, generating a sequence and writing to the out filename
         
         # generate a new melody and write to out file
-        in_seq, num_measures, tempo, temperature = self.csv_to_seq_proto(self.in_fname)
+        in_seq, num_measures, tempo, temperature, input = self.csv_to_seq_proto(self.in_fname)
         # still not sure how to use num_measures to calc num_steps TO DO add support for this
-        out_seq = self.generate(in_seq, tempo, num_measures, temperature=temperature)
+        out_seq = self.generate(in_seq, tempo, num_measures, input, temperature=temperature)
         self.seq_proto_to_csv(out_seq, self.out_fname)
 
     def io_4_generations(self):
