@@ -21,7 +21,7 @@
 
 ### Installing the Plugin
 1. Install the plugin file `AIMusicGenerator.qml` to your `/Users/[username]/Documents/MuseScore3/Plugins/` directory.
-2. Navigate to Plugins>Plugin Manager at the top.
+2. Navigate to Plugins>Plugin Manager at the top of your screen.
 3. Check off `AI Music Generator` in the window on the left, and press OK.
 
 ### Running the Plugin
