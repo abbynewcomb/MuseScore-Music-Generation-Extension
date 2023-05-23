@@ -1,4 +1,4 @@
-/* MUSESCORE PLUGIN BY ADAM PAZANDAK FOR CSCI390B, WITH PROF. ELIZABETH JENSEN. MAY 23, 2023.*/
+/* MUSESCORE PLUGIN BY ADAM PAZANDAK AND THE SONIC SYNDICATE FOR CSCI390B, WITH PROF. ELIZABETH JENSEN. MAY 23, 2023.*/
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Controls.Styles 1.3
@@ -8,7 +8,6 @@ import Qt.labs.settings 1.0
 import QtQuick.Dialogs 1.1
 import FileIO 3.0
 import MuseScore 3.0
-
 MuseScore {
     menuPath: "Plugins.AI Music Generator"
     version: "1.0"
@@ -28,8 +27,7 @@ MuseScore {
         id: proc
     }
     property int temperature: 25 // default temperature value
-    onRun: {} //do nothing on run as the generate button is what is needed to run the code
-    
+    onRun: {}
     /******************************************/
     /******CREATING THE INTERACTIVE WINDOW*****/
     /******************************************/
@@ -82,6 +80,14 @@ MuseScore {
                     console.log("END CURSOR TICKS: " + endTick);
                     var totalTracks = endStaff - startStaff + 1; //get total number of tracks
                     console.log("TOTAL TRACKS: " + totalTracks);
+                    
+                    cursor.rewind(Cursor.SELECTION_START); //put cursor at beginning of selection
+                    var measureCount = -1;
+                    while(cursor.tick<= endTick) {
+                        cursor.nextMeasure();
+                        measureCount++;
+                    }                    
+                    
                     var noteArray = [];
                     var trackNum = startStaff;
                     for (var i = 0; i < totalTracks; i++) { //iterate through all tracks
@@ -118,7 +124,7 @@ MuseScore {
                     var oldTrackValue = noteArray[0].trackID;
                     var newTrackValue;
                     var previousTick;
-                    outputText = outputText + "#" + measureCounter.value + " " + Math.round(cursor.tempo * 60) + " " + temperatureSlider.value + "\n"; //add number of measures to generate as a comment to be extracted later
+                    outputText = outputText + "#" + measureCounter.value + " " + Math.round(cursor.tempo * 60) + " " + temperatureSlider.value + " " + measureCount +  "\n"; //add number of measures to generate as a comment to be extracted later
                     outputText = outputText + "0, 0, Header, 1, " + totalTracks + ", 480\n";
                     outputText = outputText + "1, 0, Start_track\n"
                     outputText = outputText + "1, 0, Title_t, \"Piano\\000\"\n";
@@ -333,7 +339,7 @@ MuseScore {
                 from: 1
                 to: 2
                 stepSize: 1
-                value: 25
+                value: 1
                 onValueChanged: {
                     console.log("Temperature: " + temperatureSlider.value);
                 }
