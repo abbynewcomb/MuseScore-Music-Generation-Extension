@@ -42,7 +42,7 @@ Writing to the score is similar to reading from the score, using the cursor. Aft
 ## Interactive Window
 
 To provide an easy way for users to specify parameters for the model, an interactive window is created using QML. The interactive window allows users to adjust font and window size, specify the number of measures to generate, start the generation process, and quit the plugin. The window is set up with its own scale factor to resize text, buttons, and the SpinBox. The +/- buttons in the top left corner increase or decrease the global scale factor for fonts and positions.
-
+![Plugin Window](PluginWindow.png)
 In order to terminate the plugin properly, `Qt.quit()` cannot be located in the main body of the code; it can only be within the `onClicked` portion of the Quit button. Additionally, `Qt.quit()` does not actually close the window, so `main.close()` must be run separately. Buttons cannot directly execute code or perform waits in the `onRun` portion of the plugin, so any code that needs to be executed on button press must be stored in the `onClicked` portion of the button.
 
 ## Model - Magenta
