@@ -24,6 +24,8 @@
 2. Navigate to Plugins>Plugin Manager at the top of your screen.
 3. Check off `AI Music Generator` in the window on the left, and press OK.
 
+![Plugin Window](Plugin.png)
+
 ### Running the Plugin
 1. Follow the directions in this document under Model→Using the Model.
 2. Select the portion of the score you wish to be the “seed melody” for the model with your cursor. Select full measures only, and make sure there are enough empty measures after the selection for the resulting generation to go.
