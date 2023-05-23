@@ -168,12 +168,11 @@ class monitor(object):
 
 def main(): 
     #filename = sys.argv[1]
-    # in_csv_filename = "/tmp/musescore_generator/in.csv"
-    # out_csv_filename = "/tmp/musescore_generator/out.csv"
-
-    #local testing
-    in_csv_filename = "in.csv"
-    out_csv_filename = "out.csv"
+    in_csv_filename = "/tmp/musescore_generator/in.csv"
+    out_csv_filename = "/tmp/musescore_generator/out.csv"
+    # #local testing
+    # in_csv_filename = "in.csv"
+    # out_csv_filename = "out.csv"
 
     m = monitor(in_csv_filename) 
     gen = g(in_csv_filename, out_csv_filename)
