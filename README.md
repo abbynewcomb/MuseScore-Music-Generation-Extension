@@ -1,4 +1,10 @@
+![MuseScore 3.x](https://img.shields.io/badge/MuseScore-3.x-blue.svg)
+![macOS 11 or later](https://img.shields.io/badge/macOS-11%20or%20later-blue.svg)
+![Magenta](https://img.shields.io/badge/Magenta-compatible-brightgreen.svg)
+![py_midicsv](https://img.shields.io/badge/py_midicsv-compatible-brightgreen.svg)
+![Last Commit](https://img.shields.io/github/last-commit/apjp072/MuseScore-Music-Generation-Extension)
 # AI Music Generator User Manual
+![GitHub stars](https://img.shields.io/github/stars/apjp072/MuseScore-Music-Generation-Extension?style=social) ![GitHub forks](https://img.shields.io/github/forks/apjp072/MuseScore-Music-Generation-Extension?style=social)
 
 ## Software Requirements
 * [MuseScore 3.x](https://musescore.org/en/3.6.2), 3.6.x is preferred
